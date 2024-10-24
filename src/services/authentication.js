@@ -35,7 +35,9 @@ exports.signUp = async (body) => {
         email: newUser.email,
         username: newUser.username,
         country: newUser.country,
-        state: newUser.country
+        state: newUser.country,
+        bio: newUser.bio,
+        createdAt: newUser.createdAt
     };
 
   return { status: 201, data: { message: 'User created successfully', accessToken, refreshToken, user } };
@@ -90,7 +92,9 @@ exports.login = async (req) => {
         email: user.email,
         username: user.username,
         country: user.country,
-        state: user.country
+        state: user.country,
+        bio: user.bio,
+        createdAt: user.createdAt
     };
 
    return { status: 200, data: {
