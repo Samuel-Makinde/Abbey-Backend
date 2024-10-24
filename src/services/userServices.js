@@ -88,7 +88,7 @@ exports.searchUsers = async (params) => {
 
         const users = await User.findAll({
             where: whereClause,
-            attributes: { exclude: ['createdAt', 'password'] } 
+            attributes: { exclude: ['updatedAt', 'password'] } 
         });
 
         return { status: 200, data: users };
