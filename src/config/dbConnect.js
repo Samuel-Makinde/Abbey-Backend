@@ -1,14 +1,19 @@
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
+console.log(process.env.DB_DATABASE)
+console.log(process.env.DB_USER)
+console.log(process.env.DB_PASSWORD)
+console.log(process.env.DB_HOST)
+console.log(process.env.DB_PORT)
 const sequelize = new Sequelize(
   process.env.DB_DATABASE,
   process.env.DB_USER,
-  process.env.DB_PWD,
+  process.env.DB_PASSWORD,
   {
-    dialect: "postgres",
-    host: process.env.HOST,
+    host: process.env.DB_HOST,
     port: process.env.DB_PORT,
+    dialect: "postgres",
     pool: {
       max: 100,
       min: 0,
@@ -18,6 +23,7 @@ const sequelize = new Sequelize(
     },
   }
 );
+
 
 const connectDB = async () => {
   try {
@@ -31,3 +37,7 @@ const connectDB = async () => {
 };
 
 module.exports = { sequelize, connectDB };
+
+
+
+
