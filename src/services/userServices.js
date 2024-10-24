@@ -2,66 +2,90 @@ const User = require('../model/Users');
 const { Op } = require('sequelize');
 const Follower = require('../model/Follower');
 
+
+
+
 exports.getAllUser = async (params) => {
     const { userId } = params;
 
+    // Validate that userId is provided
     const requiredFields = ['userId'];
-  
     for (const field of requiredFields) {
         if (!params[field]) {
             return { status: 400, data: { message: `${field} is required` } };
         }
     }
 
-    console.log("this is id", userId);
-
-    // Fetch the current user details, excluding createdAt and password
+    // Fetch the current user's details, excluding updatedAt and password
     const getUser = await User.findOne({
-        where: {
-            id: userId
-        },
-        attributes: { exclude: ['updatedAt', 'password'] } 
+        where: { id: userId },
+        attributes: { exclude: ['updatedAt', 'password'] }
     });
 
     if (!getUser) {
         return { status: 404, data: { message: 'User not found' } };
     }
 
-    const { country, state } = getUser; 
+    const { country, state } = getUser;
 
-    // Find users with the same country and state, excluding createdAt and password
+    // Fetch users that the current user is following
+    const followingList = await Follower.findAll({
+        where: { followerId: userId },
+        attributes: ['followingId']
+    });
+
+    // Extract IDs of users that the current user is following
+    const followingIds = followingList.map(follow => follow.followingId);
+
+    // Find users with the same country and state, excluding those followed by the user
     const sameCountryStateUsers = await User.findAll({
         where: {
             country: country,
             state: state,
-            id: { [Op.ne]: userId } 
+            id: {
+                [Op.and]: [
+                    { [Op.ne]: userId }, // Exclude current user
+                    { [Op.notIn]: followingIds } // Exclude followed users
+                ]
+            }
         },
-        attributes: { exclude: ['updatedAt', 'password'] } 
+        attributes: { exclude: ['updatedAt', 'password'] }
     });
 
-    // Find users with the same country but different state, excluding createdAt and password
+    // Find users with the same country but different state, excluding those followed by the user
     const sameCountryUsers = await User.findAll({
         where: {
             country: country,
-            state: { [Op.ne]: state }, 
-            id: { [Op.ne]: userId } 
+            state: { [Op.ne]: state },
+            id: {
+                [Op.and]: [
+                    { [Op.ne]: userId }, // Exclude current user
+                    { [Op.notIn]: followingIds } // Exclude followed users
+                ]
+            }
         },
-        attributes: { exclude: ['updatedAt', 'password'] } 
+        attributes: { exclude: ['updatedAt', 'password'] }
     });
 
-    // Find all remaining users from different countries, excluding createdAt and password
+    // Find users from other countries, excluding those followed by the user
     const otherUsers = await User.findAll({
         where: {
-            country: { [Op.ne]: country }, 
-            id: { [Op.ne]: userId } 
+            country: { [Op.ne]: country },
+            id: {
+                [Op.and]: [
+                    { [Op.ne]: userId }, // Exclude current user
+                    { [Op.notIn]: followingIds } // Exclude followed users
+                ]
+            }
         },
-        attributes: { exclude: ['updatedAt', 'password'] } // Exclude fields here
+        attributes: { exclude: ['updatedAt', 'password'] }
     });
 
+    // Combine all users into a single array
     const usersToConnectWith = [
-        ...sameCountryStateUsers,  
-        ...sameCountryUsers,       
-        ...otherUsers              
+        ...sameCountryStateUsers,
+        ...sameCountryUsers,
+        ...otherUsers
     ];
 
     return { status: 200, data: usersToConnectWith };
